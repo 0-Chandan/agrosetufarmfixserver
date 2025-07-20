@@ -1,0 +1,26 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const user_route_1 = __importDefault(require("./user.route"));
+const morgan_1 = __importDefault(require("morgan"));
+const product_route_1 = __importDefault(require("./product.route"));
+const cartitem_route_1 = __importDefault(require("./cartitem.route"));
+const admin_route_1 = __importDefault(require("./admin.route"));
+const order_route_1 = __importDefault(require("./order.route"));
+const payment_route_1 = __importDefault(require("./payment.route"));
+const address_route_1 = __importDefault(require("./address.route"));
+const returnrequest_route_1 = __importDefault(require("./returnrequest.route"));
+const router = (0, express_1.Router)();
+router.use((0, morgan_1.default)("dev"));
+router.use("/api/v1/user", user_route_1.default);
+router.use("/api/v1/product", product_route_1.default);
+router.use("/api/v1/cartitem", cartitem_route_1.default);
+router.use("/api/v1/admin", admin_route_1.default);
+router.use("/api/v1/order", order_route_1.default);
+router.use("/api/v1/payment", payment_route_1.default);
+router.use("/api/v1/address", address_route_1.default);
+router.use("/api/v1/returnrequest", returnrequest_route_1.default);
+exports.default = router;

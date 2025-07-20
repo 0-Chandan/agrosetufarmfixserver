@@ -1,0 +1,170 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id       Int      @id @default(autoincrement())
+  name     String
+  email    String   @unique
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // orders Order[]
+}
+
+model User {
+  id   Int   @id @default(autoincrement())
+  name String
+  email String @unique
+  password String
+  cartItems CartItem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders Order[]
+  addresses Address[]
+
+}  
+
+model Product{
+  id Int @id @default(autoincrement())
+  name String
+  description String?
+  price Float
+  originalPrice Float
+  unit String
+  discount Float? @default(0)
+  category String?
+  brand String
+  seller String?
+  rating Float? @default(0)
+  stock Int
+  imageUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+cartItems CartItem[]
+orders OrderItem[]
+
+}
+
+model CartItem{
+  id Int @id @default(autoincrement())
+  userId Int
+  productId Int
+  quantity Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Order{
+  id Int @id @default(autoincrement())
+  userId Int
+  addressId Int
+  couponId Int?
+  totalPrice Float
+  discount Float? @default(0)
+  status String
+  items OrderItem[]
+  payment Payment?
+  returnRequest ReturnRequest?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+  coupon Coupon? @relation(fields: [couponId], references: [id])
+  address Address @relation(fields: [addressId], references: [id])
+}
+
+model OrderItem{
+  id Int @id @default(autoincrement())
+  orderId Int
+  productId Int
+  quantity Int
+  price Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Payment {
+  id            Int       @id @default(autoincrement())
+  orderId       Int       @unique
+  method        String
+  status        String
+  transactionId String?
+  paidAt        DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+}
+
+//shipping address 
+
+model Address {
+  id Int @id @default(autoincrement())
+  userId Int @unique
+  name String
+  phone String
+  addressLine1 String
+  addressLine2 String?
+  city String
+  state String
+  pinCode String
+  country String
+  orders Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Coupon {
+  id         Int       @id @default(autoincrement())
+  code       String    @unique
+  discount   Float
+  validTill  DateTime
+  isActive   Boolean   @default(true)
+
+  orders     Order[]
+}
+
+model ReturnRequest {
+  id Int @id @default(autoincrement())
+  orderId Int @unique
+  reason String
+  status String @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+
+  order  Order   @relation(fields: [orderId], references: [id])
+}
+
+// model discount {
+//   id Int @id @default(autoincrement())
+//   code String @unique
+//   percentage Float
+//   validTill DateTime
+//   isActive Boolean @default(true)
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   orders Order[]
+// }
