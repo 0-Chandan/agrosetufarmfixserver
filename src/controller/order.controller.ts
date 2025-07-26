@@ -4,94 +4,97 @@ import { SuccessResponse, ErrorResponse } from "../utils/response.utils";
 import prisma from "../config/prisma";
 import { statusCode } from "../types/types";
 
-export const createOrder = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { userId, productId, quantity, addressId, couponId } = req.body;
+export const createOrder = asyncHandler(async (req: Request, res: Response) => {
+  const { userId, addressId, couponId, products } = req.body;
 
-    // Validate required fields
-    if (!userId || !productId || !quantity || !addressId) {
-      throw new ErrorResponse("userId, productId, quantity, and addressId are required", statusCode.Bad_Request);
-    }
+  if (!products || !Array.isArray(products) || products.length === 0 || !addressId) {
+    throw new ErrorResponse("addressId and at least one product with quantity are required", statusCode.Bad_Request);
+  }
 
-    try {
-      // Verify product exists and get price
+ 
+    let totalPrice = 0;
+    let discount = 0;
+    const orderItems: any[] = [];
+
+    // Validate each product
+    for (const item of products) {
+      const { productId, quantity } = item;
+
+      if (!productId || !quantity) {
+        throw new ErrorResponse("Each product must have productId and quantity", statusCode.Bad_Request);
+      }
+
       const product = await prisma.product.findUnique({
         where: { id: productId },
         select: { price: true, stock: true }
       });
 
       if (!product) {
-        throw new ErrorResponse( "Product not found", statusCode.Not_Found);
+        throw new ErrorResponse(`Product ID ${productId} not found`, statusCode.Not_Found);
       }
 
-      // Check stock availability
       if (product.stock < quantity) {
-        throw new ErrorResponse("Insufficient stock available", statusCode.Bad_Request);
+        throw new ErrorResponse(`Insufficient stock for Product ID ${productId}`, statusCode.Bad_Request);
       }
 
-      // Calculate total price
-      let totalPrice = product.price * quantity;
-      let discount = 0;
+      const itemTotal = product.price * quantity;
+      totalPrice += itemTotal;
 
-      // Apply coupon if provided
-      if (couponId) {
-        const coupon = await prisma.coupon.findUnique({
-          where: { id: couponId }
-        });
-
-        if (coupon) {
-          discount = coupon.discount || 0;
-          totalPrice -= discount;
-        }
-      }
-
-      // Create the order
-      const order = await prisma.order.create({
-        data: {
-          userId,
-          addressId,
-          couponId: couponId || undefined, // Only set if couponId exists
-          totalPrice,
-          discount,
-          status: "PENDING", // Initial status
-          items: {
-            create: {
-              productId,
-              quantity,
-              price: product.price // Store price at time of order
-            }
-          }
-        },
-        include: {
-          items: {
-            include: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                  price: true
-                }
-              }
-            }
-          },
-          address: true,
-          coupon: true
-        }
+      orderItems.push({
+        productId,
+        quantity,
+        price: product.price // Record current price
       });
-
-      // Update product stock
-      await prisma.product.update({
-        where: { id: productId },
-        data: { stock: { decrement: quantity } }
-      });
-
-      return SuccessResponse(res, "Order created successfully", order, statusCode.Created);
-    } catch (error) {
-      console.error("Error creating order:", error);
-  throw new  ErrorResponse("Failed to create order", statusCode.Internal_Server_Error);
     }
+
+    // Apply coupon if any
+   if (couponId) {
+  const coupon = await prisma.coupon.findUnique({
+    where: { id: couponId }
+  });
+
+  if (!coupon) {
+    throw new ErrorResponse("Invalid couponId. Coupon not found", statusCode.Bad_Request);
   }
+
+  discount = coupon.discount || 0;
+  totalPrice -= discount;
+}
+
+    // Create order with multiple items
+    const order = await prisma.order.create({
+      data: {
+        userId: req?.user?.id || userId,
+        addressId,
+        couponId: couponId || undefined,
+        totalPrice,
+        discount,
+        status: "PENDING",
+        items: {
+          create: orderItems
+        }
+      },
+      include: {
+        items: true
+      }
+    });
+
+    // Update product stock
+    await Promise.all(
+      orderItems.map(item =>
+        prisma.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: { decrement: item.quantity }
+          }
+        })
+      )
+    );
+
+    return SuccessResponse(res, "Order created successfully", order, statusCode.Created);
+  } 
 );
+
 
 export const getAllOrders = asyncHandler(
   async (req: Request, res: Response) => {

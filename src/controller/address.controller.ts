@@ -16,9 +16,11 @@ interface AddressQuery {
 
 export const addAddress = asyncHandler(
   async (req: Request, res: Response) => {
-    const { street, city, state, zipCode, name, phone, addressLine2, country } = req.body;
+    const { addressLine1, city, state,name,pinCode, phone, addressLine2, country } = req.body;
 
-    if (!street || !city || !state || !zipCode || !name || !phone || !country) {
+    console.log("data:", addressLine1, city, state,name,pinCode, phone, addressLine2, country);
+
+    if (!addressLine1 || !city || !state || !name ||!pinCode || !phone || !country) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -32,11 +34,11 @@ export const addAddress = asyncHandler(
         userId: req.user.id, // ✅ Guaranteed to be a number now
         name,
         phone,
-        addressLine1: street,
+        addressLine1,
         addressLine2: addressLine2 || "",
         city,
         state,
-        pinCode: zipCode,
+        pinCode,
         country,
       },
     });
@@ -122,5 +124,23 @@ export const getAddressById = asyncHandler(
     }
 
     return SuccessResponse(res, "Address retrieved successfully", address);
+  }
+);
+
+export const  updateAddress = asyncHandler(
+  async (req: Request, res: Response) => {
+    const addressId = parseInt(req.params.id);
+    if (isNaN(addressId)) {
+      return res.status(400).json({ message: "Invalid address ID" });
+    }
+    // ✅ Ensure user is authenticated
+    if (!req.user || typeof req.user.id !== "number") {
+      return res.status(401).json({ message: "Unauthorized or invalid user" });
+    }
+    const address = await prisma.address.update({
+      where: { id: addressId, userId: req.user.id },
+      data: req.body,
+    });
+    return SuccessResponse(res, "Address updated successfully", address);
   }
 );

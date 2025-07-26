@@ -12,13 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProductById = exports.getAllProducts = exports.addproduct = void 0;
+exports.updateProduct = exports.getProductById = exports.getAllProducts = exports.addproduct = void 0;
 const error_middleware_1 = require("../middleware/error.middleware");
 const response_utils_1 = require("../utils/response.utils");
 const prisma_1 = __importDefault(require("../config/prisma"));
 exports.addproduct = (0, error_middleware_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, description, price } = req.body;
-    if (!name || !description || !price) {
+    const { name, description, price, originalPrice, unit, brand, stock, seller, rating, discount, category, } = req.body;
+    if (!name || !description || !price || !originalPrice || !unit || !brand || !stock) {
         return res.status(400).json({ message: "All fields are required" });
     }
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
@@ -27,8 +27,15 @@ exports.addproduct = (0, error_middleware_1.asyncHandler)((req, res) => __awaite
             name,
             description,
             price: parseFloat(price),
-            stock: 0, // Default stock value
-            imageUrl
+            originalPrice: Number(originalPrice),
+            unit,
+            brand,
+            stock: Number(stock), // Default stock value
+            imageUrl,
+            seller,
+            rating: Number(rating),
+            discount: Number(discount),
+            category,
         },
     });
     return (0, response_utils_1.SuccessResponse)(res, "Product added successfully", product, 201);
@@ -42,8 +49,8 @@ exports.getAllProducts = (0, error_middleware_1.asyncHandler)((req, res) => __aw
     if (search) {
         filters.AND.push({
             OR: [
-                { name: { contains: search, mode: "insensitive" } },
-                { description: { contains: search, mode: "insensitive" } },
+                { name: { contains: search } },
+                { description: { contains: search } },
             ],
         });
     }
@@ -88,4 +95,40 @@ exports.getProductById = (0, error_middleware_1.asyncHandler)((req, res) => __aw
         return res.status(404).json({ message: "Product not found" });
     }
     (0, response_utils_1.SuccessResponse)(res, "Product fetched successfully", product);
+}));
+exports.updateProduct = (0, error_middleware_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    if (!id) {
+        return res.status(400).json({ message: "Product ID is required" });
+    }
+    const updatedata = {};
+    if (req.body.name)
+        updatedata.name = req.body.name;
+    if (req.body.description)
+        updatedata.description = req.body.description;
+    if (req.body.price)
+        updatedata.price = req.body.price;
+    if (req.body.originalPrice)
+        updatedata.originalPrice = req.body.originalPrice;
+    if (req.body.unit)
+        updatedata.unit = req.body.unit;
+    if (req.body.brand)
+        updatedata.brand = req.body.brand;
+    if (req.body.stock)
+        updatedata.stock = req.body.stock;
+    if (req.body.imageUrl)
+        updatedata.imageUrl = req.body.imageUrl;
+    if (req.body.seller)
+        updatedata.seller = req.body.seller;
+    if (req.body.rating)
+        updatedata.rating = req.body.rating;
+    if (req.body.discount)
+        updatedata.discount = req.body.discount;
+    if (req.body.category)
+        updatedata.category = req.body.category;
+    const product = yield prisma_1.default.product.update({
+        where: { id: parseInt(id) },
+        data: updatedata,
+    });
+    (0, response_utils_1.SuccessResponse)(res, "Product updated successfully", product);
 }));

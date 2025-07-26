@@ -4,12 +4,20 @@ import { addproduct } from "../controller/product.controller";
 import { Authnticateuser } from "../middleware/authmiddleware";
 import { AuthnticateAdmin } from "../middleware/authadminmiddleware";
 import { getProductById } from "../controller/product.controller";
+import { updateProduct } from "../controller/product.controller";
 import upload from "../middleware/upload";
 const productRouter = Router();
 
-productRouter.get("/getallproducts",  getAllProducts);
-productRouter.post("/addproduct", AuthnticateAdmin, upload.single("image"), addproduct);
-productRouter.get("/:id", getProductById);
-
+productRouter.get("/getallproducts", getAllProducts);
+productRouter.post(
+  "/addproduct",
+  AuthnticateAdmin,
+  upload.single("image"),
+  addproduct
+);
+productRouter
+  .route("/:id")
+  .get(getProductById)
+  .put(AuthnticateAdmin, updateProduct);
 
 export default productRouter;

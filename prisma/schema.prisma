@@ -29,6 +29,7 @@ model User {
   name String
   email String @unique
   password String
+  isActive Boolean? @default(true)
   cartItems CartItem[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -51,6 +52,7 @@ model Product{
   rating Float? @default(0)
   stock Int
   imageUrl String?
+  isActive Boolean? @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 cartItems CartItem[]
@@ -65,7 +67,7 @@ model CartItem{
   quantity Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ isActive Boolean? @default(true)
   user User @relation(fields: [userId], references: [id])
   product Product @relation(fields: [productId], references: [id])
 }
@@ -77,13 +79,13 @@ model Order{
   couponId Int?
   totalPrice Float
   discount Float? @default(0)
-  status String
+  status String @default("Not Delevired")
   items OrderItem[]
   payment Payment?
   returnRequest ReturnRequest?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+   isActive Boolean? @default(true)
   user User @relation(fields: [userId], references: [id])
   coupon Coupon? @relation(fields: [couponId], references: [id])
   address Address @relation(fields: [addressId], references: [id])
@@ -97,7 +99,7 @@ model OrderItem{
   price Float
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ isActive Boolean? @default(true)
   order Order @relation(fields: [orderId], references: [id])
   product Product @relation(fields: [productId], references: [id])
 }
@@ -106,12 +108,13 @@ model Payment {
   id            Int       @id @default(autoincrement())
   orderId       Int       @unique
   method        String
-  status        String
+  status        String @default("PENDING")
+  amount        Float
   transactionId String?
   paidAt        DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+isActive Boolean? @default(true)
   order Order @relation(fields: [orderId], references: [id])
 }
 
@@ -129,6 +132,7 @@ model Address {
   pinCode String
   country String
   orders Order[]
+  isActive Boolean? @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -150,10 +154,11 @@ model ReturnRequest {
   orderId Int @unique
   reason String
   status String @default("pending")
+  isActive Boolean? @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-
+ 
   order  Order   @relation(fields: [orderId], references: [id])
 }
 

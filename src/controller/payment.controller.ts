@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/error.middleware";
-import { SuccessResponse } from "../utils/response.utils";
+import { SuccessResponse,ErrorResponse } from "../utils/response.utils";
+import { statusCode } from "../types/types";
 import prisma from "../config/prisma";
 
 
@@ -18,43 +19,64 @@ interface PaymentQuery {
 }
 
 
-export const addpayment = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { orderId, paymentMethod, amount } = req.body;
-
-    // Validate required fields
-    if (!orderId || !paymentMethod || !amount) {
-      return res.status(400).json({ message: "orderId, paymentMethod, and amount are required" });
-    }
-
-    try {
-      // Check if the order exists
-      const order = await prisma.order.findUnique({
-        where: { id: orderId }
-      });
-
-      if (!order) {
-        return res.status(404).json({ message: "Order not found" });
-      }
-
-      // Create the payment record
-      const payment = await prisma.payment.create({
-        data: {
-          orderId,
-          method:"CASH", // Assuming payment method is cash
-          status: "PENDING", // Initial status
-          transactionId: `txn_${Date.now()}`, // Example transaction ID
-          paidAt: new Date(),
-        }
-      });
-
-      return SuccessResponse(res, "Payment created successfully", payment, 201);
-    } catch (error) {
-      return res.status(500).json({ message: "Internal server error", error });
-    }
+export const addpayment = asyncHandler(async (req: Request, res: Response) => {
+  const { orderId, method, amount, status } = req.body;
+ console.log("data:", orderId, method, amount, status);
+  // Validate required fields
+  if (!orderId || !method || !amount) {
+    throw new ErrorResponse("orderId, method, and amount are required", statusCode.Bad_Request);
   }
-);  
 
+  // Validate payment method
+  const validPaymentMethods = ["CASH", "CREDIT_CARD", "UPI"];
+  if (!validPaymentMethods.includes(method.toUpperCase())) {
+    throw new ErrorResponse("Invalid payment method", statusCode.Bad_Request);
+  }
+
+  // Validate amount
+  const amountFloat = parseFloat(amount);
+  if (isNaN(amountFloat) || amountFloat <= 0) {
+    throw new ErrorResponse("Amount must be a valid positive number", statusCode.Bad_Request);
+  }
+
+  try {
+    // Check if the order exists
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      throw new ErrorResponse("Order not found", statusCode.Not_Found);
+    }
+
+    // Check if a payment already exists
+    const existingPayment = await prisma.payment.findUnique({
+      where: { orderId },
+    });
+
+    if (existingPayment) {
+      throw new ErrorResponse("A payment already exists for this order", statusCode.Bad_Request);
+    }
+
+    // Create the payment record
+    const payment = await prisma.payment.create({
+      data: {
+        orderId,
+        amount: amountFloat,
+        method: method.toUpperCase(),
+        status: status?.toUpperCase() || "PENDING",
+        transactionId: `txn_${Date.now()}`,
+        paidAt: new Date(),
+        isActive: true,
+      },
+    });
+
+    return SuccessResponse(res, "Payment created successfully", payment, statusCode.Created);
+  } catch (error) {
+    console.error("Error creating payment:", error);
+    throw new ErrorResponse("Internal server error", statusCode.Internal_Server_Error);
+  }
+});
 
 export const getpaymentall = asyncHandler(
   async (req: Request<{}, {}, {}, PaymentQuery>, res: Response) => {

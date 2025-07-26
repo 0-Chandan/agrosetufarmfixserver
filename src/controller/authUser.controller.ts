@@ -88,3 +88,11 @@ export const loginUser = asyncHandler(
 );
 
 
+export const logoutUser = asyncHandler(
+  async (req: Request, res: Response) => {
+    res.clearCookie("token");
+    SuccessResponse(res, "Logout successful");
+  }
+);
+
+

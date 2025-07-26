@@ -15,35 +15,57 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPaymentById = exports.getpaymentall = exports.addpayment = void 0;
 const error_middleware_1 = require("../middleware/error.middleware");
 const response_utils_1 = require("../utils/response.utils");
+const types_1 = require("../types/types");
 const prisma_1 = __importDefault(require("../config/prisma"));
 exports.addpayment = (0, error_middleware_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { orderId, paymentMethod, amount } = req.body;
+    const { orderId, method, amount, status } = req.body;
+    console.log("data:", orderId, method, amount, status);
     // Validate required fields
-    if (!orderId || !paymentMethod || !amount) {
-        return res.status(400).json({ message: "orderId, paymentMethod, and amount are required" });
+    if (!orderId || !method || !amount) {
+        throw new response_utils_1.ErrorResponse("orderId, method, and amount are required", types_1.statusCode.Bad_Request);
+    }
+    // Validate payment method
+    const validPaymentMethods = ["CASH", "CREDIT_CARD", "UPI"];
+    if (!validPaymentMethods.includes(method.toUpperCase())) {
+        throw new response_utils_1.ErrorResponse("Invalid payment method", types_1.statusCode.Bad_Request);
+    }
+    // Validate amount
+    const amountFloat = parseFloat(amount);
+    if (isNaN(amountFloat) || amountFloat <= 0) {
+        throw new response_utils_1.ErrorResponse("Amount must be a valid positive number", types_1.statusCode.Bad_Request);
     }
     try {
         // Check if the order exists
         const order = yield prisma_1.default.order.findUnique({
-            where: { id: orderId }
+            where: { id: orderId },
         });
         if (!order) {
-            return res.status(404).json({ message: "Order not found" });
+            throw new response_utils_1.ErrorResponse("Order not found", types_1.statusCode.Not_Found);
+        }
+        // Check if a payment already exists
+        const existingPayment = yield prisma_1.default.payment.findUnique({
+            where: { orderId },
+        });
+        if (existingPayment) {
+            throw new response_utils_1.ErrorResponse("A payment already exists for this order", types_1.statusCode.Bad_Request);
         }
         // Create the payment record
         const payment = yield prisma_1.default.payment.create({
             data: {
                 orderId,
-                method: "CASH", // Assuming payment method is cash
-                status: "PENDING", // Initial status
-                transactionId: `txn_${Date.now()}`, // Example transaction ID
+                amount: amountFloat,
+                method: method.toUpperCase(),
+                status: (status === null || status === void 0 ? void 0 : status.toUpperCase()) || "PENDING",
+                transactionId: `txn_${Date.now()}`,
                 paidAt: new Date(),
-            }
+                isActive: true,
+            },
         });
-        return (0, response_utils_1.SuccessResponse)(res, "Payment created successfully", payment, 201);
+        return (0, response_utils_1.SuccessResponse)(res, "Payment created successfully", payment, types_1.statusCode.Created);
     }
     catch (error) {
-        return res.status(500).json({ message: "Internal server error", error });
+        console.error("Error creating payment:", error);
+        throw new response_utils_1.ErrorResponse("Internal server error", types_1.statusCode.Internal_Server_Error);
     }
 }));
 exports.getpaymentall = (0, error_middleware_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {

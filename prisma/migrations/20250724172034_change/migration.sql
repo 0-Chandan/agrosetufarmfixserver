@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `order` MODIFY `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING';
+
+-- AlterTable
+ALTER TABLE `payment` MODIFY `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING';

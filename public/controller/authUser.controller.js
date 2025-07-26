@@ -23,7 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loginUser = exports.createUser = void 0;
+exports.logoutUser = exports.loginUser = exports.createUser = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const error_middleware_1 = require("../middleware/error.middleware");
 const response_utils_1 = require("../utils/response.utils");
@@ -79,4 +79,8 @@ exports.loginUser = (0, error_middleware_1.asyncHandler)((req, res, next) => __a
         user: userWithoutPassword,
         token,
     });
+}));
+exports.logoutUser = (0, error_middleware_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.clearCookie("token");
+    (0, response_utils_1.SuccessResponse)(res, "Logout successful");
 }));
