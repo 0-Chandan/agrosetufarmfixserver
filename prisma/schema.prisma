@@ -15,151 +15,177 @@ datasource db {
 }
 
 model Admin {
-  id       Int      @id @default(autoincrement())
-  name     String
-  email    String   @unique
-  password String
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  // orders Order[]
 }
 
 model User {
-  id   Int   @id @default(autoincrement())
-  name String
-  email String @unique
-  password String
-  isActive Boolean? @default(true)
+  id        Int        @id @default(autoincrement())
+  name      String
+  email     String     @unique
+  password  String
+  isActive  Boolean?   @default(true)
   cartItems CartItem[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders Order[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  orders    Order[]
   addresses Address[]
+}
 
-}  
-
-model Product{
-  id Int @id @default(autoincrement())
-  name String
+model Shop{
+  id        Int      @id @default(autoincrement())
+  name      String
   description String?
-  price Float
+  location  String
+  image Json?
+  ownerName String
+  isActive  Boolean? @default(true)
+  products  Product[]
+  licenses Licenses[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Licenses{
+  id        Int      @id @default(autoincrement())
+  shopLicense Json
+  gstCertificate Json
+  storagePermissionCertificate Json
+  fassiLicense Json
+  shopId Int
+  shop Shop @relation(fields: [shopId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id            Int         @id @default(autoincrement())
+  name          String
+  description   String?
+  price         Float
   originalPrice Float
-  unit String
-  discount Float? @default(0)
-  category String?
-  brand String
-  seller String?
-  rating Float? @default(0)
-  stock Int
-  imageUrl String?
-  isActive Boolean? @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-cartItems CartItem[]
-orders OrderItem[]
-
+  unit          String
+  discount      Float?      @default(0)
+  category      String?
+  brand         String
+  seller        String?
+  rating        Float?      @default(0)
+  stock         Int
+  imageUrl      String?
+  image          Json?
+  shopId        Int
+  shop          Shop        @relation(fields: [shopId], references: [id])
+  isActive      Boolean?    @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  cartItems     CartItem[]
+  orders        OrderItem[]
 }
 
-model CartItem{
-  id Int @id @default(autoincrement())
-  userId Int
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
   productId Int
-  quantity Int
+  quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
- isActive Boolean? @default(true)
-  user User @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  isActive  Boolean? @default(true)
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 }
 
-model Order{
-  id Int @id @default(autoincrement())
-  userId Int
-  addressId Int
-  couponId Int?
-  totalPrice Float
-  discount Float? @default(0)
-  status String @default("Not Delevired")
-  items OrderItem[]
-  payment Payment?
+model Order {
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  addressId     Int
+  couponId      Int?
+  totalPrice    Float
+  discount      Float?         @default(0)
+  status        String         @default("Not Delevired")
+  items         OrderItem[]
+  payment       Payment?
   returnRequest ReturnRequest?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-   isActive Boolean? @default(true)
-  user User @relation(fields: [userId], references: [id])
-  coupon Coupon? @relation(fields: [couponId], references: [id])
-  address Address @relation(fields: [addressId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  isActive      Boolean?       @default(true)
+  user          User           @relation(fields: [userId], references: [id])
+  coupon        Coupon?        @relation(fields: [couponId], references: [id])
+  address       Address        @relation(fields: [addressId], references: [id])
 }
 
-model OrderItem{
-  id Int @id @default(autoincrement())
-  orderId Int
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
   productId Int
-  quantity Int
-  price Float
+  quantity  Int
+  price     Float
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
- isActive Boolean? @default(true)
-  order Order @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  isActive  Boolean? @default(true)
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 }
 
 model Payment {
   id            Int       @id @default(autoincrement())
   orderId       Int       @unique
   method        String
-  status        String @default("PENDING")
+  status        String    @default("PENDING")
   amount        Float
   transactionId String?
   paidAt        DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-isActive Boolean? @default(true)
-  order Order @relation(fields: [orderId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  isActive      Boolean?  @default(true)
+  order         Order     @relation(fields: [orderId], references: [id])
 }
 
 //shipping address 
 
 model Address {
-  id Int @id @default(autoincrement())
-  userId Int @unique
-  name String
-  phone String
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  name         String
+  phone        String
   addressLine1 String
   addressLine2 String?
-  city String
-  state String
-  pinCode String
-  country String
-  orders Order[]
-  isActive Boolean? @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  city         String
+  state        String
+  pinCode      String
+  country      String
+  orders       Order[]
+  isActive     Boolean? @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id])
 }
 
 model Coupon {
-  id         Int       @id @default(autoincrement())
-  code       String    @unique
-  discount   Float
-  validTill  DateTime
-  isActive   Boolean   @default(true)
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  discount  Float
+  validTill DateTime
+  isActive  Boolean  @default(true)
 
-  orders     Order[]
+  orders Order[]
 }
 
 model ReturnRequest {
-  id Int @id @default(autoincrement())
-  orderId Int @unique
-  reason String
-  status String @default("pending")
-  isActive Boolean? @default(true)
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @unique
+  reason    String
+  status    String   @default("pending")
+  isActive  Boolean? @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
- 
-  order  Order   @relation(fields: [orderId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
 }
 
 // model discount {
@@ -173,3 +199,31 @@ model ReturnRequest {
 
 //   orders Order[]
 // }
+
+
+model Officer {
+  id         Int      @id @default(autoincrement())
+  officerId  String   @unique
+  password   String
+  place   String
+  role       OfficcerRole @default(SDM)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+enum OfficcerRole{
+  SDM
+  CO 
+  AGRICULTURE_OFFICER
+  TEHSILDAR
+}
+
+model MandiPrice{
+  id Int @id @default(autoincrement())
+  cropName String
+  currentPrice String
+  lastPrice String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

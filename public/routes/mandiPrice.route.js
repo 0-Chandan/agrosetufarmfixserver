@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const mandiPrice_controller_1 = require("../controller/mandiPrice.controller");
+const mandiPriceRouter = (0, express_1.Router)();
+mandiPriceRouter.post("/create", mandiPrice_controller_1.createMandiPrice);
+mandiPriceRouter.get("/all", mandiPrice_controller_1.getAllMandiPrices);
+mandiPriceRouter.get("/:id", mandiPrice_controller_1.getMandiPriceById);
+mandiPriceRouter.put("/:id", mandiPrice_controller_1.updateMandiPrice);
+mandiPriceRouter.delete("/:id", mandiPrice_controller_1.deleteMandiPrice);
+exports.default = mandiPriceRouter;

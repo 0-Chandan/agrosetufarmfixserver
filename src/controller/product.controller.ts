@@ -3,17 +3,23 @@ import { asyncHandler } from "../middleware/error.middleware";
 import { SuccessResponse } from "../utils/response.utils";
 import prisma from "../config/prisma";
 import { string } from "zod";
+import { deleteFromCloudinary, uploadToCloudinary } from "../config/cloudinary";
+import ENV from "../config/env";
 
 
 export const addproduct = asyncHandler(
   async (req: Request, res: Response) => {
-    const { name, description, price,originalPrice,unit,brand,stock,
-    seller, rating, discount,category,} = req.body;
+    const { name, description, price, originalPrice, unit, brand, stock, seller, rating, discount, category, shopId } = req.body;
+    
     if (!name || !description || !price || !originalPrice || !unit || !brand || !stock) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    
-  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
+    let image: any = null;
+    if (req.file) {
+      const cloudinaryImage = await uploadToCloudinary(req.file.buffer, ENV.cloud_name!);
+      image = cloudinaryImage;
+    }
 
     const product = await prisma.product.create({
       data: {
@@ -23,17 +29,19 @@ export const addproduct = asyncHandler(
         originalPrice: Number(originalPrice),
         unit,
         brand,
-        stock :Number(stock), // Default stock value
-        imageUrl,
+        stock: Number(stock),
+        image,
+        shopId,
         seller,
-        rating:Number(rating),
-        discount:Number(discount),
+        rating: Number(rating),
+        discount: Number(discount),
         category,
-        
       },
     });
+
     return SuccessResponse(res, "Product added successfully", product, 201);
-    })
+  }
+);
 
 export const getAllProducts = asyncHandler(
   async (req: Request, res: Response) => {
@@ -135,20 +143,38 @@ export const updateProduct = asyncHandler(
       return res.status(400).json({ message: "Product ID is required" });
     }
 
-    const updatedata: any ={}
-   if(req.body.name) updatedata.name = req.body.name
-   if(req.body.description) updatedata.description = req.body.description
-   if(req.body.price) updatedata.price = req.body.price
-   if(req.body.originalPrice) updatedata.originalPrice = req.body.originalPrice
-   if(req.body.unit) updatedata.unit = req.body.unit
-   if(req.body.brand) updatedata.brand = req.body.brand
-   if(req.body.stock) updatedata.stock = req.body.stock
-   if(req.body.imageUrl) updatedata.imageUrl = req.body.imageUrl
-   if(req.body.seller) updatedata.seller = req.body.seller
-   if(req.body.rating) updatedata.rating = req.body.rating
-   if(req.body.discount) updatedata.discount = req.body.discount
-   if(req.body.category) updatedata.category = req.body.category
-   
+    const updatedata: any = {};
+    if (req.body.name) updatedata.name = req.body.name;
+    if (req.body.description) updatedata.description = req.body.description;
+    if (req.body.price) updatedata.price = parseFloat(req.body.price);
+    if (req.body.originalPrice) updatedata.originalPrice = Number(req.body.originalPrice);
+    if (req.body.unit) updatedata.unit = req.body.unit;
+    if (req.body.brand) updatedata.brand = req.body.brand;
+    if (req.body.stock) updatedata.stock = Number(req.body.stock);
+    if (req.body.seller) updatedata.seller = req.body.seller;
+    if (req.body.rating) updatedata.rating = Number(req.body.rating);
+    if (req.body.discount) updatedata.discount = Number(req.body.discount);
+    if (req.body.category) updatedata.category = req.body.category;
+
+    if (req.file) {
+      // Fetch the existing product to get the current imageUrl
+      const existingProduct = await prisma.product.findUnique({
+        where: { id: parseInt(id) },
+        select: { imageUrl: true },
+      });
+
+      // Delete the previous image from Cloudinary if it exists
+      if (existingProduct?.imageUrl) {
+        const publicId = existingProduct.imageUrl.split('/').pop()?.split('.')[0]; // Extract public_id from URL
+        if (publicId) {
+          await deleteFromCloudinary(publicId);
+        }
+      }
+
+      // Upload new image to Cloudinary
+      const cloudinaryImage = await uploadToCloudinary(req.file.buffer, "products");
+      updatedata.imageUrl = cloudinaryImage;
+    }
 
     const product = await prisma.product.update({
       where: { id: parseInt(id) },
@@ -156,4 +182,5 @@ export const updateProduct = asyncHandler(
     }); 
 
     SuccessResponse(res, "Product updated successfully", product);
-    });
+  }
+);

@@ -5,7 +5,7 @@ import { Authnticateuser } from "../middleware/authmiddleware";
 import { AuthnticateAdmin } from "../middleware/authadminmiddleware";
 import { getProductById } from "../controller/product.controller";
 import { updateProduct } from "../controller/product.controller";
-import upload from "../middleware/upload";
+import { upload } from "../middleware/upload";
 const productRouter = Router();
 
 productRouter.get("/getallproducts", getAllProducts);

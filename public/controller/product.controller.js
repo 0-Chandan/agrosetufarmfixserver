@@ -16,12 +16,18 @@ exports.updateProduct = exports.getProductById = exports.getAllProducts = export
 const error_middleware_1 = require("../middleware/error.middleware");
 const response_utils_1 = require("../utils/response.utils");
 const prisma_1 = __importDefault(require("../config/prisma"));
+const cloudinary_1 = require("../config/cloudinary");
+const env_1 = __importDefault(require("../config/env"));
 exports.addproduct = (0, error_middleware_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, description, price, originalPrice, unit, brand, stock, seller, rating, discount, category, } = req.body;
+    const { name, description, price, originalPrice, unit, brand, stock, seller, rating, discount, category, shopId } = req.body;
     if (!name || !description || !price || !originalPrice || !unit || !brand || !stock) {
         return res.status(400).json({ message: "All fields are required" });
     }
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    let image = null;
+    if (req.file) {
+        const cloudinaryImage = yield (0, cloudinary_1.uploadToCloudinary)(req.file.buffer, env_1.default.cloud_name);
+        image = cloudinaryImage;
+    }
     const product = yield prisma_1.default.product.create({
         data: {
             name,
@@ -30,8 +36,9 @@ exports.addproduct = (0, error_middleware_1.asyncHandler)((req, res) => __awaite
             originalPrice: Number(originalPrice),
             unit,
             brand,
-            stock: Number(stock), // Default stock value
-            imageUrl,
+            stock: Number(stock),
+            image,
+            shopId,
             seller,
             rating: Number(rating),
             discount: Number(discount),
@@ -97,6 +104,7 @@ exports.getProductById = (0, error_middleware_1.asyncHandler)((req, res) => __aw
     (0, response_utils_1.SuccessResponse)(res, "Product fetched successfully", product);
 }));
 exports.updateProduct = (0, error_middleware_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const { id } = req.params;
     if (!id) {
         return res.status(400).json({ message: "Product ID is required" });
@@ -107,25 +115,40 @@ exports.updateProduct = (0, error_middleware_1.asyncHandler)((req, res) => __awa
     if (req.body.description)
         updatedata.description = req.body.description;
     if (req.body.price)
-        updatedata.price = req.body.price;
+        updatedata.price = parseFloat(req.body.price);
     if (req.body.originalPrice)
-        updatedata.originalPrice = req.body.originalPrice;
+        updatedata.originalPrice = Number(req.body.originalPrice);
     if (req.body.unit)
         updatedata.unit = req.body.unit;
     if (req.body.brand)
         updatedata.brand = req.body.brand;
     if (req.body.stock)
-        updatedata.stock = req.body.stock;
-    if (req.body.imageUrl)
-        updatedata.imageUrl = req.body.imageUrl;
+        updatedata.stock = Number(req.body.stock);
     if (req.body.seller)
         updatedata.seller = req.body.seller;
     if (req.body.rating)
-        updatedata.rating = req.body.rating;
+        updatedata.rating = Number(req.body.rating);
     if (req.body.discount)
-        updatedata.discount = req.body.discount;
+        updatedata.discount = Number(req.body.discount);
     if (req.body.category)
         updatedata.category = req.body.category;
+    if (req.file) {
+        // Fetch the existing product to get the current imageUrl
+        const existingProduct = yield prisma_1.default.product.findUnique({
+            where: { id: parseInt(id) },
+            select: { imageUrl: true },
+        });
+        // Delete the previous image from Cloudinary if it exists
+        if (existingProduct === null || existingProduct === void 0 ? void 0 : existingProduct.imageUrl) {
+            const publicId = (_a = existingProduct.imageUrl.split('/').pop()) === null || _a === void 0 ? void 0 : _a.split('.')[0]; // Extract public_id from URL
+            if (publicId) {
+                yield (0, cloudinary_1.deleteFromCloudinary)(publicId);
+            }
+        }
+        // Upload new image to Cloudinary
+        const cloudinaryImage = yield (0, cloudinary_1.uploadToCloudinary)(req.file.buffer, "products");
+        updatedata.imageUrl = cloudinaryImage;
+    }
     const product = yield prisma_1.default.product.update({
         where: { id: parseInt(id) },
         data: updatedata,

@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const officer_controller_1 = require("../controller/officer.controller");
+const upload_1 = require("../middleware/upload");
+const officerRouter = (0, express_1.Router)();
+officerRouter.post("/create", upload_1.upload.single("profileImage"), officer_controller_1.createOfficer);
+officerRouter.get("/all", officer_controller_1.getAllOffcer);
+officerRouter.get("/:id", officer_controller_1.getOfficerById);
+officerRouter.put("/:id", upload_1.upload.single("profileImage"), officer_controller_1.updateOfficer);
+officerRouter.delete("/:id", officer_controller_1.deleteOfficer);
+exports.default = officerRouter;

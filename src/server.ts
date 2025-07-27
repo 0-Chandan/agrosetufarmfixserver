@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 import errorMiddleware from './middleware/error.middleware';
 import cors from 'cors';
 import path from 'path';
-import upload from './middleware/upload';
 
 const app = express();
 app.use(cors());

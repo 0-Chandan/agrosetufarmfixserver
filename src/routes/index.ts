@@ -8,10 +8,12 @@ import orderRouter from "./order.route";
 import paymentRouter from "./payment.route";
 import addressRouter from "./address.route";
 import returnRequestRouter from "./returnrequest.route";
+import shopRouter from "./shop.route";
 
 
 const router = Router();
 router.use(morgan("dev"));
+router.use("/api/v1/admin", adminRouter);
 router.use("/api/v1/user", userRouter);
 router.use("/api/v1/product", productRouter);
 router.use("/api/v1/cartitem", cartItemRouter); 
@@ -20,5 +22,6 @@ router.use("/api/v1/order", orderRouter);
 router.use("/api/v1/payment", paymentRouter);
 router.use("/api/v1/address", addressRouter);
 router.use("/api/v1/returnrequest", returnRequestRouter);
+router.use("/api/v1/shop", shopRouter)
 
 export default router;
