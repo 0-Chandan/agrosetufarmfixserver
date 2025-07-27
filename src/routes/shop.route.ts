@@ -17,6 +17,12 @@ shopRouter.post("/create", upload.fields([
 
 shopRouter.get("/all", getAllShops)
 shopRouter.get("/:id", getShopById)
-shopRouter.put("/:id", updateShop)
+shopRouter.put("/:id", upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "shopLicense", maxCount: 1 },
+    { name: "gstCertificate", maxCount: 1 },
+    { name: "storagePermissionCertificate", maxCount: 1 },
+    { name: "fassiLicense", maxCount: 1 }
+]), updateShop)
 
 export default shopRouter;

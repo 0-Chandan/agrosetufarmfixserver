@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loginAdmin = exports.createAdmin = void 0;
+exports.getAllAdmin = exports.loginAdmin = exports.createAdmin = void 0;
 const response_utils_1 = require("../utils/response.utils");
 const types_1 = require("../types/types");
 const prisma_1 = __importDefault(require("../config/prisma"));
@@ -65,4 +65,8 @@ exports.loginAdmin = (0, error_middleware_1.asyncHandler)((req, res, next) => __
         expiresIn: "30d",
     });
     (0, response_utils_1.SuccessResponse)(res, "Login successful", { admin: admin[0], token });
+}));
+exports.getAllAdmin = (0, error_middleware_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const admins = yield prisma_1.default.admin.findMany();
+    (0, response_utils_1.SuccessResponse)(res, "Admins fetched successfully", { admins });
 }));

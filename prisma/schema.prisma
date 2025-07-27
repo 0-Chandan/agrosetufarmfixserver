@@ -36,31 +36,32 @@ model User {
   addresses Address[]
 }
 
-model Shop{
-  id        Int      @id @default(autoincrement())
-  name      String
+model Shop {
+  id          Int        @id @default(autoincrement())
+  name        String
   description String?
-  location  String
-  image Json?
-  ownerName String
-  isActive  Boolean? @default(true)
-  products  Product[]
-  licenses Licenses[]
+  location    String
+  image       Json?
+  ownerName   String
+  isActive    Boolean?   @default(true)
+  isApproved Boolean @default(false)
+  products    Product[]
+  licenses    Licenses[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Licenses{
-  id        Int      @id @default(autoincrement())
-  shopLicense Json
-  gstCertificate Json
+model Licenses {
+  id                           Int      @id @default(autoincrement())
+  shopLicense                  Json
+  gstCertificate               Json
   storagePermissionCertificate Json
-  fassiLicense Json
-  shopId Int
-  shop Shop @relation(fields: [shopId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  fassiLicense                 Json
+  shopId                       Int
+  shop                         Shop     @relation(fields: [shopId], references: [id])
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
 }
 
 model Product {
@@ -77,9 +78,9 @@ model Product {
   rating        Float?      @default(0)
   stock         Int
   imageUrl      String?
-  image          Json?
-  shopId        Int
-  shop          Shop        @relation(fields: [shopId], references: [id])
+  image         Json?
+  shopId        Int?
+  shop          Shop?       @relation(fields: [shopId], references: [id])
   isActive      Boolean?    @default(true)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -200,30 +201,29 @@ model ReturnRequest {
 //   orders Order[]
 // }
 
-
 model Officer {
-  id         Int      @id @default(autoincrement())
-  officerId  String   @unique
-  password   String
-  place   String
-  role       OfficcerRole @default(SDM)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        Int          @id @default(autoincrement())
+  officerId String       @unique
+  password  String
+  place     String
+  role      OfficcerRole @default(SDM)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 }
 
-enum OfficcerRole{
+enum OfficcerRole {
   SDM
-  CO 
+  CO
   AGRICULTURE_OFFICER
   TEHSILDAR
 }
 
-model MandiPrice{
-  id Int @id @default(autoincrement())
-  cropName String
+model MandiPrice {
+  id           Int    @id @default(autoincrement())
+  cropName     String 
   currentPrice String
-  lastPrice String
-  
+  lastPrice    String
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

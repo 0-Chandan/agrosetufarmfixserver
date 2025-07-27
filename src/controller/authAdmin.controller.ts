@@ -84,3 +84,10 @@ export const loginAdmin = asyncHandler(
     SuccessResponse(res, "Login successful", { admin: admin[0], token });
   }
 );
+
+
+export const getAllAdmin = asyncHandler(async (req: Request, res: Response, next) => {
+  const admins = await prisma.admin.findMany();
+
+  SuccessResponse(res, "Admins fetched successfully", { admins });
+})

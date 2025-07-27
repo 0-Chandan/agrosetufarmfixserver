@@ -6,4 +6,5 @@ const express_1 = require("express");
 const adminRouter = (0, express_1.Router)();
 adminRouter.post("/createadmin", authAdmin_controller_1.createAdmin);
 adminRouter.post("/login", authAdmin_controller_2.loginAdmin);
+adminRouter.get("/all", authAdmin_controller_1.getAllAdmin);
 exports.default = adminRouter;

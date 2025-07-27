@@ -4,7 +4,7 @@ import { upload } from "../middleware/upload";
 
 const officerRouter = Router();
 
-officerRouter.post("/create", upload.single("profileImage"), createOfficer);
+officerRouter.post("/create", upload.single("image"), createOfficer);
 officerRouter.get("/all", getAllOffcer);
 officerRouter.get("/:id", getOfficerById);
 officerRouter.put("/:id", upload.single("profileImage"), updateOfficer);

@@ -5,8 +5,8 @@ import { Authnticateuser } from "../middleware/authmiddleware";
 import { Router } from "express";
 const orderRouter = Router();
 
-orderRouter.post("/create", Authnticateuser, createOrder);
-orderRouter.get("/getall", Authnticateuser, getAllOrders);
-orderRouter.get("/:id", Authnticateuser, getOrderById); // Assuming you want to fetch a specific order by ID
+orderRouter.post("/create", createOrder);
+orderRouter.get("/getall", getAllOrders);
+orderRouter.get("/:id", getOrderById); // Assuming you want to fetch a specific order by ID
 
 export default orderRouter; 

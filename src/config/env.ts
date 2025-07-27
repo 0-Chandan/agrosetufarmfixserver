@@ -5,6 +5,7 @@ dotenv.config();
 const ENV = {
     Port: process.env.PORT || 3000,
     JWT_SECRET: process.env.JWT_SECRET,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
 
 
     // Cloudinary Credentials

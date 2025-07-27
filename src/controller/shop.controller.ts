@@ -6,6 +6,17 @@ import { SuccessResponse } from "../utils/response.utils";
 import { ShopSchema } from "../validators/shop";
 import ENV from "../config/env";
 
+// Type for Cloudinary response
+interface CloudinaryResponse {
+  public_id: string;
+  secure_url: string;
+}
+
+// Type guard function to check if an object is a CloudinaryResponse
+function isCloudinaryResponse(obj: any): obj is CloudinaryResponse {
+  return obj && typeof obj === 'object' && 'public_id' in obj && 'secure_url' in obj;
+}
+
 export const createShop = asyncHandler(async (req, res) => {
     const validatedData = ShopSchema.parse(req.body);
 
@@ -125,8 +136,8 @@ export const getShopById = asyncHandler(async (req, res) => {
   const shop = await prisma.shop.findUnique({
     where: { id: parseInt(id) },
     include: {
-        licenses: true,
-        products: true
+        products: true,
+        licenses: true
     },
   });
 
@@ -139,103 +150,95 @@ export const getShopById = asyncHandler(async (req, res) => {
 
 
 export const updateShop = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+    const { id } = req.params;
 
-  if (!id) {
-    return res.status(400).json({ message: "Shop ID is required" });
-  }
+    if (!id) {
+        return res.status(400).json({ message: "Shop ID is required" });
+    }
 
-  const validatedData = ShopSchema.partial().parse(req.body);
-  const updatedData: any = { ...validatedData };
+    const validatedData = ShopSchema.partial().parse(req.body);
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
 
-  const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
-
-  // Handle image update
-  if (files && files["image"] && files["image"].length > 0) {
     const imageSchema = z.object({
-      mimetype: z.string().refine((val) => val.startsWith("image/"), {
-        message: "File must be an image",
-      }),
-      size: z.number().max(1 * 1024 * 1024, "File size must be less than 1MB"),
-    });
-    imageSchema.parse(files["image"][0]);
-
-    // Delete existing image if present
-    const existingShop = await prisma.shop.findUnique({
-      where: { id: parseInt(id) },
-      select: { image: true },
-    });
-    if (existingShop?.image) {
-      const publicId = (existingShop.image as any).url.split("/").pop()?.split(".")[0];
-      if (publicId) {
-        await deleteFromCloudinary(publicId);
-      }
-    }
-
-    const imageUrl = await uploadToCloudinary(files["image"][0].buffer, `${ENV.cloud_name}/shops`);
-    updatedData.image = { url: imageUrl };
-  }
-
-  // Handle license updates
-  if (files && Object.keys(files).some((key) => ["shopLicense", "gstCertificate", "storagePermissionCertificate", "fassiLicense"].includes(key))) {
-    const imageSchema = z.object({
-      mimetype: z.string().refine((val) => val.startsWith("image/"), {
-        message: "File must be an image",
-      }),
-      size: z.number().max(1 * 1024 * 1024, "File size must be less than 1MB"),
+        mimetype: z.string().refine((val) => val.startsWith("image/"), {
+            message: "File must be an image",
+        }),
+        size: z.number().max(1 * 1024 * 1024, "File size must be less than 1MB"),
     });
 
-    const existingLicenses = await prisma.licenses.findFirst({
-      where: { shopId: parseInt(id) },
+    const shop = await prisma.$transaction(async (tx) => {
+        // Fetch existing shop and licenses
+        const existingShop = await tx.shop.findUnique({
+            where: { id: parseInt(id) },
+            include: { licenses: true },
+        });
+
+        if (!existingShop) {
+            throw new Error("Shop not found");
+        }
+
+        // Prepare shop update data
+        const shopUpdateData: any = { ...validatedData };
+
+        // Handle shop image update
+        if (files?.["image"] && files["image"].length > 0) {
+            imageSchema.parse(files["image"][0]);
+            const newImageUrl = await uploadToCloudinary(files["image"][0].buffer, ENV.cloud_name!);
+            shopUpdateData.image = newImageUrl;
+
+            // Delete old image from Cloudinary if it exists
+            if (isCloudinaryResponse(existingShop.image)) {
+                await deleteFromCloudinary(existingShop.image.public_id);
+            }
+        }
+
+        // Prepare licenses update data
+        const licensesUpdateData: any = {};
+        const licenseFields = [
+            "shopLicense",
+            "gstCertificate",
+            "storagePermissionCertificate",
+            "fassiLicense",
+        ];
+
+        for (const field of licenseFields) {
+            if (files?.[field] && files[field].length > 0) {
+                imageSchema.parse(files[field][0]);
+                const newUrl = await uploadToCloudinary(files[field][0].buffer, ENV.cloud_name!);
+                licensesUpdateData[field] = newUrl;
+
+                // Delete old license image from Cloudinary if it exists
+                const license = existingShop.licenses?.[0];
+                if (license) {
+                    const oldLicenseData = (license as any)[field];
+                    if (isCloudinaryResponse(oldLicenseData)) {
+                        await deleteFromCloudinary(oldLicenseData.public_id);
+                    }
+                }
+            }
+        }
+
+        // Update shop
+        const updatedShop = await tx.shop.update({
+            where: { id: parseInt(id) },
+            data: shopUpdateData,
+            include: {
+                licenses: true,
+                
+            }
+        });
+
+        // Update licenses if any license files were provided
+        if (Object.keys(licensesUpdateData).length > 0 && existingShop.licenses?.[0]) {
+            await tx.licenses.update({
+                where: { id: existingShop.licenses[0].id },
+                data: licensesUpdateData,
+            });
+        }
+
+        return updatedShop;
     });
 
-    const licenseData: any = {};
-    if (files["shopLicense"] && files["shopLicense"].length > 0) {
-      imageSchema.parse(files["shopLicense"][0]);
-      if (existingLicenses?.shopLicense) {
-        const publicId = (existingLicenses.shopLicense as any).url.split("/").pop()?.split(".")[0];
-        if (publicId) await deleteFromCloudinary(publicId);
-      }
-      licenseData.shopLicense = { url: await uploadToCloudinary(files["shopLicense"][0].buffer, `${ENV.cloud_name}/shop-licenses`) };
-    }
-    if (files["gstCertificate"] && files["gstCertificate"].length > 0) {
-      imageSchema.parse(files["gstCertificate"][0]);
-      if (existingLicenses?.gstCertificate) {
-        const publicId = (existingLicenses.gstCertificate as any).url.split("/").pop()?.split(".")[0];
-        if (publicId) await deleteFromCloudinary(publicId);
-      }
-      licenseData.gstCertificate = { url: await uploadToCloudinary(files["gstCertificate"][0].buffer, `${ENV.cloud_name}/shop-licenses`) };
-    }
-    if (files["storagePermissionCertificate"] && files["storagePermissionCertificate"].length > 0) {
-      imageSchema.parse(files["storagePermissionCertificate"][0]);
-      if (existingLicenses?.storagePermissionCertificate) {
-        const publicId = (existingLicenses.storagePermissionCertificate as any).url.split("/").pop()?.split(".")[0];
-        if (publicId) await deleteFromCloudinary(publicId);
-      }
-      licenseData.storagePermissionCertificate = { url: await uploadToCloudinary(files["storagePermissionCertificate"][0].buffer, `${ENV.cloud_name}/shop-licenses`) };
-    }
-    if (files["fassiLicense"] && files["fassiLicense"].length > 0) {
-      imageSchema.parse(files["fassiLicense"][0]);
-      if (existingLicenses?.fassiLicense) {
-        const publicId = (existingLicenses.fassiLicense as any).url.split("/").pop()?.split(".")[0];
-        if (publicId) await deleteFromCloudinary(publicId);
-      }
-      licenseData.fassiLicense = { url: await uploadToCloudinary(files["fassiLicense"][0].buffer, `${ENV.cloud_name}/shop-licenses`) };
-    }
-
-    if (Object.keys(licenseData).length > 0) {
-      await prisma.licenses.updateMany({
-        where: { shopId: parseInt(id) },
-        data: licenseData,
-      });
-    }
-  }
-
-  const shop = await prisma.shop.update({
-    where: { id: parseInt(id) },
-    data: updatedData,
-    include: { licenses: true, products: true },
-  });
-
-  return SuccessResponse(res, "Shop updated successfully", shop);
+    return SuccessResponse(res, "Shop updated successfully", shop);
 });
+

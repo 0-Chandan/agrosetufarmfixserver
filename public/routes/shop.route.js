@@ -14,5 +14,11 @@ shopRouter.post("/create", upload_1.upload.fields([
 // shopRouter.use(AuthnticateAdmin)
 shopRouter.get("/all", shop_controller_1.getAllShops);
 shopRouter.get("/:id", shop_controller_1.getShopById);
-shopRouter.put("/:id", shop_controller_1.updateShop);
+shopRouter.put("/:id", upload_1.upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "shopLicense", maxCount: 1 },
+    { name: "gstCertificate", maxCount: 1 },
+    { name: "storagePermissionCertificate", maxCount: 1 },
+    { name: "fassiLicense", maxCount: 1 }
+]), shop_controller_1.updateShop);
 exports.default = shopRouter;

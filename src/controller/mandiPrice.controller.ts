@@ -7,11 +7,7 @@ const createMandiPrice = asyncHandler(async (req, res, next) => {
     const validatedData = MandiPriceSchema.parse(req.body);
 
     const mandiPrice = await prisma.mandiPrice.create({
-    data: {
-      cropName: validatedData.cropName,
-      currentPrice: validatedData.currentPrice,
-      lastPrice: validatedData.lastPrice,
-    },
+    data: validatedData,
   });
 
   return SuccessResponse(res, "Mandi price created successfully", mandiPrice, 201);

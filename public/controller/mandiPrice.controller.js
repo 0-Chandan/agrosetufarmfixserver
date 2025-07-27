@@ -20,11 +20,7 @@ const mandiPrice_1 = require("../validators/mandiPrice");
 const createMandiPrice = (0, error_middleware_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const validatedData = mandiPrice_1.MandiPriceSchema.parse(req.body);
     const mandiPrice = yield prisma_1.default.mandiPrice.create({
-        data: {
-            cropName: validatedData.cropName,
-            currentPrice: validatedData.currentPrice,
-            lastPrice: validatedData.lastPrice,
-        },
+        data: validatedData,
     });
     return (0, response_utils_1.SuccessResponse)(res, "Mandi price created successfully", mandiPrice, 201);
 }));
