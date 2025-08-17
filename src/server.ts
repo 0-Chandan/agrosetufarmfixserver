@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import errorMiddleware from './middleware/error.middleware';
 import cors from 'cors';
 import path from 'path';
+import { main } from './utils/seed';
 
 const app = express();
 app.use(cors());
