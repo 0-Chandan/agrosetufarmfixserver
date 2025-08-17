@@ -9,6 +9,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const error_middleware_1 = __importDefault(require("./middleware/error.middleware"));
 const cors_1 = __importDefault(require("cors"));
 const path_1 = __importDefault(require("path"));
+const seed_1 = require("./utils/seed");
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 const port = process.env.PORT || 3000;
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
 app.use(error_middleware_1.default);
+(0, seed_1.main)();
 app.listen(3000, () => {
     console.log(`Server started on port http://localhost:3000`);
 });

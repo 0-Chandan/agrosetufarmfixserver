@@ -7,7 +7,11 @@ import path from 'path';
 import { main } from './utils/seed';
 
 const app = express();
-app.use(cors());
+app.use(cors(
+    {
+        origin: '*'
+    }
+));
 
 const port = process.env.PORT || 3000;
 
