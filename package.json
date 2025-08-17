@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node public/server.js",
     "build": "tsc",
-    "dev": "concurrently \"tsc -b --watch\" \"nodemon public/server.js\""
+    "dev": "concurrently \"tsc -b --watch\" \"nodemon public/server.js\"",
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",
