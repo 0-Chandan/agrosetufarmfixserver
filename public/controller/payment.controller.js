@@ -29,6 +29,11 @@ exports.addpayment = (0, error_middleware_1.asyncHandler)((req, res) => __awaite
     if (!validPaymentMethods.includes(method.toUpperCase())) {
         throw new response_utils_1.ErrorResponse("Invalid payment method", types_1.statusCode.Bad_Request);
     }
+    // Validate orderId
+    const orderIdInt = parseInt(orderId);
+    if (isNaN(orderIdInt)) {
+        throw new response_utils_1.ErrorResponse("Invalid orderId", types_1.statusCode.Bad_Request);
+    }
     // Validate amount
     const amountFloat = parseFloat(amount);
     if (isNaN(amountFloat) || amountFloat <= 0) {
@@ -37,14 +42,14 @@ exports.addpayment = (0, error_middleware_1.asyncHandler)((req, res) => __awaite
     try {
         // Check if the order exists
         const order = yield prisma_1.default.order.findUnique({
-            where: { id: orderId },
+            where: { id: orderIdInt },
         });
         if (!order) {
             throw new response_utils_1.ErrorResponse("Order not found", types_1.statusCode.Not_Found);
         }
         // Check if a payment already exists
         const existingPayment = yield prisma_1.default.payment.findUnique({
-            where: { orderId },
+            where: { orderId: orderIdInt },
         });
         if (existingPayment) {
             throw new response_utils_1.ErrorResponse("A payment already exists for this order", types_1.statusCode.Bad_Request);
@@ -52,7 +57,7 @@ exports.addpayment = (0, error_middleware_1.asyncHandler)((req, res) => __awaite
         // Create the payment record
         const payment = yield prisma_1.default.payment.create({
             data: {
-                orderId,
+                orderId: orderIdInt,
                 amount: amountFloat,
                 method: method.toUpperCase(),
                 status: (status === null || status === void 0 ? void 0 : status.toUpperCase()) || "PENDING",
@@ -76,9 +81,9 @@ exports.getpaymentall = (0, error_middleware_1.asyncHandler)((req, res) => __awa
         // Build filters for Prisma
         const filters = {};
         if (status)
-            filters.status = status;
+            filters.status = status.toUpperCase();
         if (paymentMethod)
-            filters.paymentMethod = paymentMethod;
+            filters.method = paymentMethod.toUpperCase();
         if (orderId)
             filters.orderId = parseInt(orderId);
         if (userId) {
@@ -118,19 +123,25 @@ exports.getpaymentall = (0, error_middleware_1.asyncHandler)((req, res) => __awa
         }, 200);
     }
     catch (error) {
-        return res.status(500).json({ message: "Internal server error", error });
+        console.error("Error fetching payments:", error);
+        throw new response_utils_1.ErrorResponse("Internal server error", types_1.statusCode.Internal_Server_Error);
     }
 }));
 exports.getPaymentById = (0, error_middleware_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     if (!id) {
-        return res.status(400).json({ message: "Payment ID is required" });
+        throw new response_utils_1.ErrorResponse("Payment ID is required", types_1.statusCode.Bad_Request);
+    }
+    const paymentId = parseInt(id);
+    if (isNaN(paymentId)) {
+        throw new response_utils_1.ErrorResponse("Invalid payment ID", types_1.statusCode.Bad_Request);
     }
     const payment = yield prisma_1.default.payment.findUnique({
-        where: { id: parseInt(id) },
+        where: { id: paymentId },
+        include: { order: true }, // Include order details for better context
     });
     if (!payment) {
-        return res.status(404).json({ message: "Payment not found" });
+        throw new response_utils_1.ErrorResponse("Payment not found", types_1.statusCode.Not_Found);
     }
     return (0, response_utils_1.SuccessResponse)(res, "Payment fetched successfully", payment);
 }));

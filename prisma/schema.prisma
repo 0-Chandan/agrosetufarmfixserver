@@ -15,20 +15,25 @@ datasource db {
 }
 
 model Admin {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
+  id       Int      @id @default(autoincrement())
+  name     String
+  email    String   @unique
+  password String
+ createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
-  name      String
-  email     String     @unique
-  password  String
-  isActive  Boolean?   @default(true)
+  id   Int   @id @default(autoincrement())
+  name String
+  email String @unique
+  password String
+  phone String?
+  fullAdress String?
+  totalLand String?
+  specialCrop String?
+  expagriculture String?
+  isActive Boolean? @default(true)
   cartItems CartItem[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -40,13 +45,13 @@ model Shop {
   id          Int        @id @default(autoincrement())
   name        String
   description String?
-  location    String
-  image       Json?
-  ownerName   String
-  isActive    Boolean?   @default(true)
+  location  String
+  image Json?
   isApproved Boolean @default(false)
-  products    Product[]
-  licenses    Licenses[]
+  ownerName String
+  isActive  Boolean? @default(true)
+  products  Product[]
+  licenses Licenses[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,9 +83,9 @@ model Product {
   rating        Float?      @default(0)
   stock         Int
   imageUrl      String?
-  image         Json?
+  image          Json?
   shopId        Int?
-  shop          Shop?       @relation(fields: [shopId], references: [id])
+  shop          Shop?        @relation(fields: [shopId], references: [id])
   isActive      Boolean?    @default(true)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -222,8 +227,8 @@ model MandiPrice {
   id           Int    @id @default(autoincrement())
   cropName     String 
   currentPrice String
-  lastPrice    String
-
+  lastPrice String
+  unit String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

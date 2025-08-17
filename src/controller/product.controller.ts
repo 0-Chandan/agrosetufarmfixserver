@@ -30,7 +30,7 @@ export const addproduct = asyncHandler(
         unit,
         brand,
         stock: Number(stock),
-        image,
+        image: image ? image : null,
         shopId,
         seller,
         rating: Number(rating),

@@ -1,9 +1,8 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/error.middleware";
-import { SuccessResponse,ErrorResponse } from "../utils/response.utils";
+import { SuccessResponse, ErrorResponse } from "../utils/response.utils";
 import { statusCode } from "../types/types";
 import prisma from "../config/prisma";
-
 
 interface PaymentQuery {
   page?: string;
@@ -18,10 +17,10 @@ interface PaymentQuery {
   order?: "asc" | "desc";
 }
 
-
 export const addpayment = asyncHandler(async (req: Request, res: Response) => {
   const { orderId, method, amount, status } = req.body;
- console.log("data:", orderId, method, amount, status);
+  console.log("data:", orderId, method, amount, status);
+
   // Validate required fields
   if (!orderId || !method || !amount) {
     throw new ErrorResponse("orderId, method, and amount are required", statusCode.Bad_Request);
@@ -33,6 +32,12 @@ export const addpayment = asyncHandler(async (req: Request, res: Response) => {
     throw new ErrorResponse("Invalid payment method", statusCode.Bad_Request);
   }
 
+  // Validate orderId
+  const orderIdInt = parseInt(orderId);
+  if (isNaN(orderIdInt)) {
+    throw new ErrorResponse("Invalid orderId", statusCode.Bad_Request);
+  }
+
   // Validate amount
   const amountFloat = parseFloat(amount);
   if (isNaN(amountFloat) || amountFloat <= 0) {
@@ -42,7 +47,7 @@ export const addpayment = asyncHandler(async (req: Request, res: Response) => {
   try {
     // Check if the order exists
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: { id: orderIdInt },
     });
 
     if (!order) {
@@ -51,7 +56,7 @@ export const addpayment = asyncHandler(async (req: Request, res: Response) => {
 
     // Check if a payment already exists
     const existingPayment = await prisma.payment.findUnique({
-      where: { orderId },
+      where: { orderId: orderIdInt },
     });
 
     if (existingPayment) {
@@ -61,7 +66,7 @@ export const addpayment = asyncHandler(async (req: Request, res: Response) => {
     // Create the payment record
     const payment = await prisma.payment.create({
       data: {
-        orderId,
+        orderId: orderIdInt,
         amount: amountFloat,
         method: method.toUpperCase(),
         status: status?.toUpperCase() || "PENDING",
@@ -100,8 +105,8 @@ export const getpaymentall = asyncHandler(
       // Build filters for Prisma
       const filters: any = {};
 
-      if (status) filters.status = status;
-      if (paymentMethod) filters.paymentMethod = paymentMethod;
+      if (status) filters.status = status.toUpperCase();
+      if (paymentMethod) filters.method = paymentMethod.toUpperCase();
       if (orderId) filters.orderId = parseInt(orderId);
 
       if (userId) {
@@ -147,23 +152,32 @@ export const getpaymentall = asyncHandler(
         200
       );
     } catch (error) {
-      return res.status(500).json({ message: "Internal server error", error });
+      console.error("Error fetching payments:", error);
+      throw new ErrorResponse("Internal server error", statusCode.Internal_Server_Error);
     }
   }
 );
 
-export const getPaymentById = asyncHandler(
-  async (req: Request, res: Response) => {      
-    const { id } = req.params;
-    if (!id) {
-      return res.status(400).json({ message: "Payment ID is required" });
-    }
-    const payment = await prisma.payment.findUnique({
-      where: { id: parseInt(id) },
-    });
-    if (!payment) {
-      return res.status(404).json({ message: "Payment not found" });
-    }
-    return SuccessResponse(res, "Payment fetched successfully", payment);
+export const getPaymentById = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  if (!id) {
+    throw new ErrorResponse("Payment ID is required", statusCode.Bad_Request);
   }
-);
+
+  const paymentId = parseInt(id);
+  if (isNaN(paymentId)) {
+    throw new ErrorResponse("Invalid payment ID", statusCode.Bad_Request);
+  }
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: { order: true }, // Include order details for better context
+  });
+
+  if (!payment) {
+    throw new ErrorResponse("Payment not found", statusCode.Not_Found);
+  }
+
+  return SuccessResponse(res, "Payment fetched successfully", payment);
+});

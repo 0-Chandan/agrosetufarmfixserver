@@ -10,7 +10,6 @@ import addressRouter from "./address.route";
 import returnRequestRouter from "./returnrequest.route";
 import shopRouter from "./shop.route";
 import mandiPriceRouter from "./mandiPrice.route";
-import officerRouter from "./officer.route";
 import aiRouter from "./ai.route";
 
 
@@ -26,8 +25,7 @@ router.use("/api/v1/payment", paymentRouter);
 router.use("/api/v1/address", addressRouter);
 router.use("/api/v1/returnrequest", returnRequestRouter);
 router.use("/api/v1/shop", shopRouter)
-router.use("/api/v1/mandi-price", mandiPriceRouter)
-router.use("/api/v1/officer", officerRouter)
-router.use("/api/v1/ai", aiRouter)
+router.use("/api/v1/mandi",mandiPriceRouter);
+router.use("/api/v1/ai",aiRouter);
 
 export default router;

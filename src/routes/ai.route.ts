@@ -5,6 +5,6 @@ import { getImageResponse, getTextResponse } from "../controller/ai.controller";
 const aiRouter = Router();
 
 aiRouter.post("/analyze-image", upload.single("image"), getImageResponse)
-aiRouter.post("/analyze-prompt", upload.single("image"), getTextResponse)
+aiRouter.post("/analyze-prompt", getTextResponse)
 
 export default aiRouter

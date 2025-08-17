@@ -99,7 +99,17 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
 export const getAllOrders = asyncHandler(
   async (req: Request, res: Response) => {
     try {
-      const orders = await prisma.order.findMany();
+      const orders = await prisma.order.findMany(
+        {
+          include:{
+            items: {
+              include: {
+                product: true
+              }
+            }
+          }
+        }
+      );
       return SuccessResponse(res, "All orders retrieved successfully", orders);
     } catch (error) {
       console.error("Error fetching orders:", error);

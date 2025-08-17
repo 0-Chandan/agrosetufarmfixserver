@@ -37,7 +37,7 @@ exports.addproduct = (0, error_middleware_1.asyncHandler)((req, res) => __awaite
             unit,
             brand,
             stock: Number(stock),
-            image,
+            image: image ? image : null,
             shopId,
             seller,
             rating: Number(rating),

@@ -13,7 +13,6 @@ const port = process.env.PORT || 3000;
 dotenv.config({
     path: './.env'
 });
-
 app.use(express.json());
 app.use(routes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -26,4 +25,4 @@ app.use(errorMiddleware);
 
 app.listen(3000, () => {
     console.log(`Server started on port http://localhost:3000`);
-});
+}); 
